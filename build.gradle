@@ -11,6 +11,18 @@ apply plugin: 'eclipse'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+// Java toolchain: ensures JDK 8 compatible build on any JDK 8-21+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+}
+
+// Gradle 8.x requires explicit duplicate handling for resources
+tasks.withType(ProcessResources).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
+
 [compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
 
 repositories {
@@ -57,15 +69,16 @@ dependencies {
         exclude group: "org.fisco-bcos.java-sdk"
         exclude group: "org.slf4j"
     }
-    implementation ('com.fasterxml.jackson.core:jackson-databind:2.14.3'){
-        force true
-    }
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.3'
     testImplementation('com.github.stefanbirkner:system-rules:1.19.0')
     testImplementation('junit:junit:4.13.2')
 }
 
 configurations.all {
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    resolutionStrategy {
+        cacheChangingModulesFor 0, 'seconds'
+        force 'com.fasterxml.jackson.core:jackson-databind:2.14.3'
+    }
     exclude group: 'ch.qos.logback', module: 'logback-classic'
     exclude group: 'io.zipkin.brave', module: 'brave-tests'
 }
@@ -100,7 +113,7 @@ task integrationTest(type: Test) {
 }
 
 jar {
-    destinationDir file('dist/apps')
+    destinationDirectory = file('dist/apps')
     archiveFileName=project.name + '.jar'
     exclude '**/*.xml'
     exclude '**/*.properties'
